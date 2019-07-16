@@ -128,7 +128,7 @@ int rcu_read_lock_sched_held(void)
 
 	if (rcu_read_lock_held_common(&ret))
 		return ret;
-    return lockdep_opinion || !preemptible();
+	return lock_is_held(&rcu_sched_lock_map) || !preemptible();
 }
 EXPORT_SYMBOL(rcu_read_lock_sched_held);
 #endif
