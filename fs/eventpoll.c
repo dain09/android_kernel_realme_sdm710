@@ -2149,7 +2149,6 @@ static int do_compat_epoll_pwait(int epfd, struct epoll_event __user *events,
 				 const compat_sigset_t __user *sigmask,
 				 compat_size_t sigsetsize)
 {
-	struct timespec64 to;
 	long err;
 	compat_sigset_t csigmask;
 	sigset_t ksigmask, sigsaved;
@@ -2168,8 +2167,7 @@ static int do_compat_epoll_pwait(int epfd, struct epoll_event __user *events,
 		set_current_blocked(&ksigmask);
 	}
 
-	err = do_epoll_wait(epfd, events, maxevents,
-			    ep_timeout_to_timespec(&to, timeout));
+	err = do_epoll_wait(epfd, events, maxevents, timeout);
 
 	/*
 	 * If we changed the signal mask, we need to restore the original one.
