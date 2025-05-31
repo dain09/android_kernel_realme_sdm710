@@ -20,7 +20,7 @@
 #include <linux/sched.h>
 #include <linux/uaccess.h>
 #include <linux/wait.h>
-#include <linux/msm_audio.h>
+#include "../uapi/linux/msm_audio.h"
 #include <linux/debugfs.h>
 #include <linux/list.h>
 #include <linux/slab.h>

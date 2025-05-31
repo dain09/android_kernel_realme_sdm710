@@ -1,7 +1,7 @@
 #ifndef _UAPI_MSM_AUDIO_VOICEMEMO_H
 #define _UAPI_MSM_AUDIO_VOICEMEMO_H
 
-#include <linux/msm_audio.h>
+#include "../uapi/linux/msm_audio.h"
 
 #define AUDIO_GET_VOICEMEMO_CONFIG  _IOW(AUDIO_IOCTL_MAGIC, \
 	(AUDIO_MAX_COMMON_IOCTL_NUM+0), unsigned int)

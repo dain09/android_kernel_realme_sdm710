@@ -1,7 +1,7 @@
 #ifndef _UAPI_MSM_AUDIO_G711_H
 #define _UAPI_MSM_AUDIO_G711_H
 
-#include <linux/msm_audio.h>
+#include "../uapi/linux/msm_audio.h"
 
 struct msm_audio_g711_enc_config {
 	uint32_t sample_rate;

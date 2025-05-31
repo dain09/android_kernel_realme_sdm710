@@ -31,7 +31,7 @@
 #include <sound/audio_effects.h>
 #include <asm/dma.h>
 #include <linux/dma-mapping.h>
-#include <linux/msm_audio.h>
+#include "../uapi/linux/msm_audio.h"
 
 #include <sound/timer.h>
 #include <sound/tlv.h>

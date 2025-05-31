@@ -30,7 +30,7 @@
 #include <sound/timer.h>
 #include <asm/dma.h>
 #include <linux/dma-mapping.h>
-#include <linux/msm_audio.h>
+#include "../uapi/linux/msm_audio.h"
 
 #include <linux/of_device.h>
 #include <sound/tlv.h>

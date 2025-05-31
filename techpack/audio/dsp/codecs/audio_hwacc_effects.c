@@ -11,7 +11,7 @@
  * GNU General Public License for more details.
  */
 
-#include <linux/msm_audio.h>
+#include "../uapi/linux/msm_audio.h"
 #include <linux/compat.h>
 #include "q6audio_common.h"
 #include <dsp/msm-audio-effects-q6-v2.h>
