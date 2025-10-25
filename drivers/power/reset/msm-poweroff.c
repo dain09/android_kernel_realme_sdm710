@@ -350,6 +350,8 @@ static void msm_restart_prepare(const char *cmd)
 				(cmd != NULL && cmd[0] != '\0'));
 	}
 
+	force_warm_reboot = true;
+
 #ifdef OPLUS_BUG_STABILITY
 //Fanhong.Kong@PSW.BSP.CHG,add 2018/3/25 panic reboot reason as kernel for hotfix
 	if (in_panic){
