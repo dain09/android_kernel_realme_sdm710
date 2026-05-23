@@ -54,6 +54,10 @@ endif
 VDSO_CAFLAGS += -fPIC -fno-builtin -fno-stack-protector
 VDSO_CAFLAGS += -DDISABLE_BRANCH_PROFILING
 
+ifeq ($(cc-name),clang)
+VDSO_CAFLAGS += $(call cc32-disable-warning,unused-command-line-argument)
+endif
+
 # Try to compile for ARMv8. If the compiler is too old and doesn't support it,
 # fall back to v7. There is no easy way to check for what architecture the code
 # is being compiled, so define a macro specifying that (see arch/arm/Makefile).
@@ -94,6 +98,9 @@ VDSO_AFLAGS := $(VDSO_CAFLAGS)
 VDSO_AFLAGS += -D__ASSEMBLY__
 
 VDSO_LDFLAGS := $(VDSO_CPPFLAGS)
+ifeq ($(cc-name),clang)
+VDSO_LDFLAGS += $(call cc32-disable-warning,unused-command-line-argument)
+endif
 # From arm vDSO Makefile
 VDSO_LDFLAGS += -Wl,-Bsymbolic -Wl,--no-undefined -Wl,-soname=linux-vdso.so.1
 VDSO_LDFLAGS += -Wl,-z,max-page-size=4096 -Wl,-z,common-page-size=4096,-zexecstack
