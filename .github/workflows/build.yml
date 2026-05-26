@@ -1,0 +1,163 @@
+name: Build Khaenriah Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: "Publish a GitHub release after a successful build"
+        required: true
+        default: false
+        type: boolean
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  DEVICE_CODENAME: "RMX1971"
+  KERNEL_DEFCONFIG: "sdm670-perf_defconfig"
+  KERNEL_IMAGE: "Image.gz-dtb"
+  KERNEL_NAME: "Khaenriah"
+  KERNEL_VERSION: "SLMK-EOL"
+  KERNEL_VARIANT: "XXKSU"
+  PROTON_CLANG_REPO: "https://github.com/kdrag0n/proton-clang.git"
+  ANYKERNEL_REPO: "https://github.com/dain09/AnyKernel3.git"
+  KERNELSU_SETUP: "https://raw.githubusercontent.com/backslashxx/KernelSU/refs/heads/master/kernel/setup.sh"
+  KERNELSU_SETUP_BRANCH: master
+  KBUILD_BUILD_USER: "@d_ai_n"
+  KBUILD_BUILD_HOST: "ubuntu-24.04"
+
+jobs:
+  build:
+    name: Build Kernel Artifacts
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    outputs:
+      zip_name: ${{ steps.package.outputs.ZIP_NAME }}
+      tag_name: ${{ steps.package.outputs.TAG_NAME }}
+
+    steps:
+      - name: Checkout kernel source
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - name: Restore ccache
+        uses: hendrikmuhs/ccache-action@v1.2.23
+        with:
+          key: ${{ runner.os }}-sdm670-kernel
+          max-size: 10G
+
+      - name: Install Host Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison build-essential ccache cpio flex git libelf-dev lld \
+            libncurses5-dev libssl-dev make rsync unzip zip python3 python-is-python3
+
+      - name: Set up Toolchain
+        run: |
+          git clone --depth 1 $PROTON_CLANG_REPO .deps/proton-clang
+
+      - name: Set up AnyKernel3
+        run: |
+          git clone --depth 1 -b r5p $ANYKERNEL_REPO .deps/AnyKernel3
+
+      - name: Integrate KernelSU
+        run: |
+          curl -LSs "$KERNELSU_SETUP" | bash -s $KERNELSU_SETUP_BRANCH
+
+      - name: Configure and Build Kernel
+        run: |
+          mkdir -p out
+          
+          # Define absolute path to Proton Clang tools
+          TC_PATH="${{ github.workspace }}/.deps/proton-clang/bin"
+
+          # Mute the unused argument warning for host tools for a clean log
+          export HOSTCFLAGS="-Wno-unused-command-line-argument"
+
+          # 1. Generate target defconfig using absolute compiler path
+          make O=out ARCH=arm64 \
+            CC="$TC_PATH/clang" \
+            CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
+            $KERNEL_DEFCONFIG
+          
+          # 2. Inject Localversion via scripts/config
+          ./scripts/config --file out/.config \
+             --set-str CONFIG_LOCALVERSION "-${KERNEL_NAME}-${KERNEL_VERSION}"
+            
+          # 3. Synchronize oldconfig
+          make O=out ARCH=arm64 \
+            CC="$TC_PATH/clang" \
+            CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
+            CROSS_COMPILE_ARM32="$TC_PATH/arm-linux-gnueabi-" \
+            olddefconfig
+
+          # 4. Compile Kernel using absolute tool paths
+          make -j$(nproc --all) O=out ARCH=arm64 \
+            CC="ccache $TC_PATH/clang" \
+            LD="$TC_PATH/ld.lld" \
+            AR="$TC_PATH/llvm-ar" \
+            NM="$TC_PATH/llvm-nm" \
+            OBJCOPY="$TC_PATH/llvm-objcopy" \
+            OBJDUMP="$TC_PATH/llvm-objdump" \
+            READELF="$TC_PATH/llvm-readelf" \
+            STRIP="$TC_PATH/llvm-strip" \
+            CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
+            CROSS_COMPILE_ARM32="$TC_PATH/arm-linux-gnueabi-" \
+            LLVM=1 LLVM_IAS=1
+
+      - name: Package AnyKernel3
+        id: package
+        run: |
+          mkdir -p artifacts
+          cp out/arch/arm64/boot/$KERNEL_IMAGE artifacts/
+          cp out/.config artifacts/kernel.config
+          
+          mkdir -p .deps/AnyKernel3_staging
+          cp -r .deps/AnyKernel3/* .deps/AnyKernel3_staging/
+          cp out/arch/arm64/boot/$KERNEL_IMAGE .deps/AnyKernel3_staging/
+          
+          BUILD_DATE=$(date -u +%Y%m%d-%H%M)
+          ZIP_NAME="${KERNEL_NAME}-${KERNEL_VERSION}-${KERNEL_VARIANT}-${DEVICE_CODENAME}-${BUILD_DATE}.zip"
+          TAG_NAME="${KERNEL_NAME}-${KERNEL_VERSION}-${BUILD_DATE}"
+          
+          cd .deps/AnyKernel3_staging
+          zip -r9 ../../artifacts/$ZIP_NAME . -x '.git*' 'README.md'
+          cd ../..
+          
+          echo "ZIP_NAME=$ZIP_NAME" >> $GITHUB_OUTPUT
+          echo "TAG_NAME=$TAG_NAME" >> $GITHUB_OUTPUT
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: kernel-build-artifacts
+          path: artifacts/*
+
+  release:
+    name: Publish Release
+    needs: build
+    if: ${{ github.event.inputs.publish_release == 'true' }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          name: kernel-build-artifacts
+          path: .
+          
+      - name: Create Release
+        uses: softprops/action-gh-release@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ needs.build.outputs.tag_name }}
+          name: ${{ needs.build.outputs.tag_name }}
+          files: |
+            *.zip
+            kernel.config
