@@ -3619,7 +3619,7 @@ static int check_func_arg(struct bpf_verifier_env *env, u32 regno,
 		}
 	} else if (arg_type == ARG_PTR_TO_SOCKET) {
 		expected_type = PTR_TO_SOCKET;
-		if (type != expected_type)
+		if (type != expected_type && type != PTR_TO_CTX)
 			goto err_type;
 	} else if (arg_type == ARG_PTR_TO_BTF_ID) {
 		expected_type = PTR_TO_BTF_ID;

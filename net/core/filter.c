@@ -4470,6 +4470,8 @@ sk_filter_func_proto(enum bpf_func_id func_id, const struct bpf_prog *prog)
 		return &bpf_skb_load_bytes_proto;
 	case BPF_FUNC_skb_load_bytes_relative:
 		return &bpf_skb_load_bytes_relative_proto;
+	case BPF_FUNC_sk_storage_get:
+		return &bpf_sk_storage_get_proto;
 	case BPF_FUNC_get_socket_cookie:
 		return &bpf_get_socket_cookie_proto;
 	case BPF_FUNC_get_socket_uid:
