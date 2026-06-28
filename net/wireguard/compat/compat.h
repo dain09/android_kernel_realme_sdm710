@@ -780,6 +780,9 @@ static inline void crypto_xor_cpy(u8 *dst, const u8 *src1, const u8 *src2,
 #if LINUX_VERSION_CODE < KERNEL_VERSION(5, 0, 0) && !defined(ISRHEL8)
 #define totalram_pages() totalram_pages
 #endif
+#if LINUX_VERSION_CODE < KERNEL_VERSION(5, 1, 0)
+#include <uapi/linux/time.h>
+#endif
 
 #if LINUX_VERSION_CODE < KERNEL_VERSION(4, 12, 0)
 #include <linux/kernel.h>
