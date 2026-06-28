@@ -791,6 +791,10 @@ ifeq ($(cc-name),clang)
     KBUILD_AFLAGS += -march=armv8.2-a+crypto+rcpc -mcpu=cortex-a76 -mtune=cortex-a76
 endif
 
+# Initialize all stack variables to zero for security
+KBUILD_CFLAGS  += $(call cc-option, -ftrivial-auto-var-init=zero)
+KBUILD_CFLAGS  += $(call cc-option, -enable-trivial-auto-var-init-zero-knowing-it-will-be-removed-from-clang)
+
 # Tell gcc to never replace conditional load with a non-conditional one
 KBUILD_CFLAGS	+= $(call cc-option,--param=allow-store-data-races=0)
 KBUILD_CFLAGS	+= $(call cc-option,-fno-allow-store-data-races)
