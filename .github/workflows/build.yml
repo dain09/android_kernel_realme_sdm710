@@ -22,8 +22,6 @@ env:
   KERNEL_VARIANT: "XXKSU"
   PROTON_CLANG_REPO: "https://github.com/kdrag0n/proton-clang.git"
   ANYKERNEL_REPO: "https://github.com/dain09/AnyKernel3.git"
-  KERNELSU_SETUP: "https://raw.githubusercontent.com/Sorayukii/KernelSU-Next/stable/kernel/setup.sh"
-  KERNELSU_SETUP_BRANCH: hookless-staging
   KBUILD_BUILD_USER: "@d_ai_n"
   KBUILD_BUILD_HOST: "ubuntu-24.04"
 
@@ -63,10 +61,6 @@ jobs:
       - name: Set up AnyKernel3
         run: |
           git clone --depth 1 -b r5p $ANYKERNEL_REPO .deps/AnyKernel3
-
-      - name: Integrate KernelSU
-        run: |
-          curl -LSs "$KERNELSU_SETUP" | bash -s $KERNELSU_SETUP_BRANCH
 
       - name: Configure and Build Kernel
         run: |
