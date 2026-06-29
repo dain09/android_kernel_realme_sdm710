@@ -80,9 +80,6 @@ jobs:
           
           # 2. Inject KernelSU configs and Localversion via scripts/config
           ./scripts/config --file out/.config \
-            -e CONFIG_KSU \
-            -e CONFIG_KSU_EXTRAS \
-            -e CONFIG_KSU_TAMPER_SYSCALL_TABLE \
             --set-str CONFIG_LOCALVERSION "-${KERNEL_NAME}-${KERNEL_VERSION}"
             
           # 3. Synchronize oldconfig
