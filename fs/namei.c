@@ -5034,39 +5034,15 @@ int generic_readlink(struct dentry *dentry, char __user *buffer, int buflen)
 {
 	DEFINE_DELAYED_CALL(done);
 	struct inode *inode = d_inode(dentry);
-	const char *link;
+	const char *link = inode->i_link;
 	int res;
-
-	if (unlikely(!(inode->i_opflags & IOP_DEFAULT_READLINK))) {
-		if (unlikely(inode->i_op->readlink))
-#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-		{
-			if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
-				res = susfs_open_redirect_spoof_vfs_readlink(inode, buffer, buflen);
-				if (!res)
-					return res;
-			}
-			return inode->i_op->readlink(dentry, buffer, buflen);
-		}
-#else
-			return inode->i_op->readlink(dentry, buffer, buflen);
-#endif
-
-		if (!d_is_symlink(dentry))
-			return -EINVAL;
-
-		spin_lock(&inode->i_lock);
-			inode->i_opflags |= IOP_DEFAULT_READLINK;
-			spin_unlock(&inode->i_lock);
-		}
-	}
-	link = READ_ONCE(inode->i_link);
 
 	if (!link) {
 		link = inode->i_op->get_link(dentry, inode, &done);
 		if (IS_ERR(link))
 			return PTR_ERR(link);
 	}
+
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 	if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
 		res = susfs_open_redirect_spoof_vfs_readlink(inode, buffer, buflen);
