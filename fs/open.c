@@ -33,6 +33,9 @@
 #include <linux/compat.h>
 
 #include "internal.h"
+#if defined(CONFIG_KSU_SUSFS_OPEN_REDIRECT)
+#include <linux/susfs_def.h>
+#endif
 
 int do_truncate2(struct vfsmount *mnt, struct dentry *dentry, loff_t length,
 		unsigned int time_attrs, struct file *filp)
@@ -1089,6 +1092,9 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 	struct open_flags op;
 	int fd = build_open_flags(flags, mode, &op);
 	struct filename *tmp;
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+	int open_redirect_retry_cnt = 0;
+#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 
 	if (fd)
 		return fd;
@@ -1097,10 +1103,35 @@ long do_sys_open(int dfd, const char __user *filename, int flags, umode_t mode)
 	if (IS_ERR(tmp))
 		return PTR_ERR(tmp);
 
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+open_redirect_retry:
+#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 	fd = get_unused_fd_flags(flags);
 	if (fd >= 0) {
 		struct file *f = do_filp_open(dfd, tmp, &op);
 		if (IS_ERR(f)) {
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+			if (open_redirect_retry_cnt < 1) {
+				struct path path;
+				int err = kern_path(tmp->name, 0, &path);
+				if (!err) {
+					struct inode *inode = path.dentry->d_inode;
+					if (SUSFS_IS_INODE_OPEN_REDIRECT_WITHOUT_UID_CHECK(inode)) {
+						struct filename *open_redirect_tmp;
+						open_redirect_tmp = susfs_open_redirect_spoof_do_sys_openat(inode);
+						if (open_redirect_tmp) {
+							putname(tmp);
+							tmp = open_redirect_tmp;
+							path_put(&path);
+							put_unused_fd(fd);
+							open_redirect_retry_cnt++;
+							goto open_redirect_retry;
+						}
+					}
+					path_put(&path);
+				}
+			}
+#endif // #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 			put_unused_fd(fd);
 			fd = PTR_ERR(f);
 		} else {

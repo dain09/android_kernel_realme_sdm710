@@ -21,7 +21,9 @@ endif
 
 obj-$(CONFIG_PROC_FS) += proc_namespace.o
 
-obj-y				+= notify/
+obj-$(CONFIG_KSU_SUSFS) += susfs.o
+
+obj-y +=	notify/
 obj-$(CONFIG_EPOLL)		+= eventpoll.o
 obj-y				+= anon_inodes.o
 obj-$(CONFIG_SIGNALFD)		+= signalfd.o

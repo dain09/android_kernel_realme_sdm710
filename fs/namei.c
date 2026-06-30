@@ -38,6 +38,9 @@
 #include <linux/bitops.h>
 #include <linux/init_task.h>
 #include <asm/uaccess.h>
+#if defined(CONFIG_KSU_SUSFS_SUS_PATH)
+#include <linux/susfs_def.h>
+#endif
 
 #include "internal.h"
 #include "mount.h"
@@ -1624,6 +1627,13 @@ static struct dentry *lookup_dcache(const struct qstr *name,
 				return ERR_PTR(error);
 			}
 		}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+		if (dentry && dentry->d_parent->d_inode &&
+			SUSFS_IS_INODE_SUS_PATH(dentry->d_parent->d_inode)) {
+			dput(dentry);
+			dentry = NULL;
+		}
+#endif
 	}
 	return dentry;
 }
@@ -1659,13 +1669,22 @@ static struct dentry *__lookup_hash(const struct qstr *name,
 	struct dentry *dentry = lookup_dcache(name, base, flags);
 
 	if (dentry)
-		return dentry;
+		goto ret;
 
 	dentry = d_alloc(base, name);
 	if (unlikely(!dentry))
 		return ERR_PTR(-ENOMEM);
 
-	return lookup_real(base->d_inode, dentry, flags);
+	dentry = lookup_real(base->d_inode, dentry, flags);
+ret:
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (!IS_ERR(dentry) && dentry && dentry->d_parent->d_inode &&
+		SUSFS_IS_INODE_SUS_PATH(dentry->d_parent->d_inode)) {
+		dput(dentry);
+		dentry = NULL;
+	}
+#endif
+	return dentry;
 }
 
 static int lookup_fast(struct nameidata *nd,
@@ -1726,6 +1745,12 @@ static int lookup_fast(struct nameidata *nd,
 			 */
 			if (unlikely(negative))
 				return -ENOENT;
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+			if (dentry && dentry->d_parent &&
+				dentry->d_parent->d_inode &&
+				SUSFS_IS_INODE_SUS_PATH(dentry->d_parent->d_inode))
+				return -ENOENT;
+#endif
 			path->mnt = mnt;
 			path->dentry = dentry;
 			if (likely(__follow_mount_rcu(nd, path, inode, seqp)))
@@ -1751,6 +1776,14 @@ static int lookup_fast(struct nameidata *nd,
 		return -ENOENT;
 	}
 
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (dentry && dentry->d_parent &&
+		dentry->d_parent->d_inode &&
+		SUSFS_IS_INODE_SUS_PATH(dentry->d_parent->d_inode)) {
+		dput(dentry);
+		return -ENOENT;
+	}
+#endif
 	path->mnt = mnt;
 	path->dentry = dentry;
 	err = follow_managed(path, nd);
@@ -1925,6 +1958,15 @@ static int walk_component(struct nameidata *nd, int flags)
 		seq = 0;	/* we are already out of RCU mode */
 		inode = d_backing_inode(path.dentry);
 	}
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (path.dentry && path.dentry->d_parent &&
+		path.dentry->d_parent->d_inode &&
+		SUSFS_IS_INODE_SUS_PATH(path.dentry->d_parent->d_inode)) {
+		path_put(&path);
+		return -ENOENT;
+	}
+#endif
 
 	if (flags & WALK_PUT)
 		put_link(nd);
@@ -3362,6 +3404,14 @@ no_open:
 		error = create_error;
 		goto out_dput;
 	}
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	if (dentry && dentry->d_parent &&
+		dentry->d_parent->d_inode &&
+		SUSFS_IS_INODE_SUS_PATH(dentry->d_parent->d_inode)) {
+		error = -ENOENT;
+		goto out_dput;
+	}
+#endif
 out_no_open:
 	path->dentry = dentry;
 	path->mnt = nd->path.mnt;

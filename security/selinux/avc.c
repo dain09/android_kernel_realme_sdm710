@@ -1036,6 +1036,11 @@ static noinline int avc_denied(u32 ssid, u32 tsid,
 	if (flags & AVC_STRICT)
 		return -EACCES;
 
+#ifdef CONFIG_KSU_SUSFS_SUS_SU
+	if (unlikely(susfs_is_current_proc_umounted()))
+		return 0;
+#endif
+
 	if (selinux_enforcing && !(avd->flags & AVD_FLAGS_PERMISSIVE))
 		return -EACCES;
 

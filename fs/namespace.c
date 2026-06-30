@@ -20,6 +20,10 @@
 #include <linux/fs_struct.h>	/* get_fs_root et.al. */
 #include <linux/fsnotify.h>	/* fsnotify_vfsmount_delete */
 #include <linux/uaccess.h>
+#if defined(CONFIG_KSU_SUSFS_SUS_MOUNT)
+#include <linux/susfs.h>
+#include <linux/susfs_def.h>
+#endif
 #include <linux/file.h>
 #include <linux/proc_ns.h>
 #include <linux/magic.h>
