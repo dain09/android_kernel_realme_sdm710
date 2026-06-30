@@ -30,6 +30,11 @@ extern bool susfs_is_current_ksu_domain(void);
 extern void try_umount(const char *mnt, int flags);
 extern struct list_head mount_list;
 extern struct rw_semaphore mount_list_lock;
+struct mount_entry {
+	char *umountable;
+	unsigned int flags;
+	struct list_head list;
+};
 #endif
 extern void setup_selinux(const char *domain, struct cred *cred);
 extern struct cred *ksu_cred;
