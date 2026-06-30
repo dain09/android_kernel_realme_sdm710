@@ -26,6 +26,11 @@
 #include "fuse/fuse_i.h"
 
 extern bool susfs_is_current_ksu_domain(void);
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+extern void try_umount(const char *mnt, int flags);
+extern struct list_head mount_list;
+extern struct rw_semaphore mount_list_lock;
+#endif
 extern void setup_selinux(const char *domain, struct cred *cred);
 extern struct cred *ksu_cred;
 
@@ -1499,4 +1504,25 @@ struct vfsmount *susfs_get_non_sus_vfsmnt_from_vfsmnt(struct vfsmount *vfsmnt) {
 	return &mnt->mnt;
 }
 #endif // #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+void susfs_try_umount(uid_t uid)
+{
+	struct mount_entry *entry;
+	const struct cred *saved;
+
+	if (!uid || uid < 10000)
+		return;
+
+	saved = override_creds(ksu_cred);
+
+	down_read(&mount_list_lock);
+	list_for_each_entry(entry, &mount_list, list) {
+		try_umount(entry->umountable, entry->flags);
+	}
+	up_read(&mount_list_lock);
+
+	revert_creds(saved);
+}
+#endif
 
