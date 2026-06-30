@@ -60,8 +60,8 @@ ccflags-y += -I$(KSU_KERNEL_DIR) -I$(KSU_KERNEL_DIR)/include
 
 obj-$(CONFIG_KSU) += kernelsu.o
 
-ccflags-y += -DKSU_VERSION=424242
-ccflags-y += -DKSU_VERSION_TAG=\"v1.0.0\"
+ccflags-y += -DKSU_VERSION=33206
+ccflags-y += -DKSU_VERSION_TAG=\"v3.2.0\"
 
 KSU_NEXT_MANAGER_SIZE := 0x9ab01a
 KSU_NEXT_MANAGER_HASH := ee1039d70278996792f24128653fe040cfe9ec40091b5cf22aa5ea0cb4890707
