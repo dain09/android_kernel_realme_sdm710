@@ -24,7 +24,6 @@
 #include <linux/jump_label.h>
 #include <linux/susfs.h>
 #include "fuse/fuse_i.h"
-#include "mount.h"
 
 extern bool susfs_is_current_ksu_domain(void);
 extern void setup_selinux(const char *domain, struct cred *cred);
@@ -1361,12 +1360,15 @@ static int watch_one_dir(struct watch_dir *wd)
  * synchronize_srcu on the same SRCU struct, causing a permanent deadlock).
  * Cleanup is deferred to a delayed_work that runs outside the SRCU context.
  */
-static int susfs_handle_sdcard_inode_event(struct fsnotify_mark *mark, u32 mask,
-											struct inode *inode, struct inode *dir,
-											const struct qstr *file_name, u32 cookie)
+static int susfs_handle_sdcard_event(struct fsnotify_group *group,
+				     struct inode *inode,
+				     struct fsnotify_mark *inode_mark,
+				     struct fsnotify_mark *vfsmount_mark,
+				     u32 mask, void *data, int data_type,
+				     const unsigned char *file_name, u32 cookie)
 {
-	if (!file_name || file_name->len != 7 ||
-	    memcmp(file_name->name, "Android", 7))
+	if (!file_name || strlen(file_name) != 7 ||
+	    memcmp(file_name, "Android", 7))
 		return 0;
 
 	if (test_and_set_bit(0, &sdcard_cleanup_scheduled))
@@ -1379,7 +1381,7 @@ static int susfs_handle_sdcard_inode_event(struct fsnotify_mark *mark, u32 mask,
 }
 
 static const struct fsnotify_ops fsnotify_ops = {
-	.handle_inode_event = susfs_handle_sdcard_inode_event,
+	.handle_event = susfs_handle_sdcard_event,
 };
 
 static int add_mark_on_inode(struct inode *inode, u32 mask,
