@@ -95,6 +95,7 @@ static inline bool susfs_ends_with(const char *str, const char *suffix) {
 
 static inline bool susfs_is_current_proc_umounted(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)));
+}
 
 static inline bool susfs_is_current_ksu_domain(void) {
 	return (likely(!test_thread_flag(TIF_PROC_UMOUNTED)));
