@@ -97,10 +97,6 @@ static inline bool susfs_is_current_proc_umounted(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)));
 }
 
-static inline bool susfs_is_current_ksu_domain(void) {
-	return (likely(!test_thread_flag(TIF_PROC_UMOUNTED)));
-}
-
 static inline void susfs_set_current_proc_umounted(void) {
 	set_thread_flag(TIF_PROC_UMOUNTED);
 }
