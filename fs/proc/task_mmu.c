@@ -470,6 +470,7 @@ static void show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_
 
 	if (file) {
 		struct inode *inode = file_inode(vma->vm_file);
+		struct dentry *dentry = file->f_path.dentry;
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
 		if (SUSFS_IS_INODE_OPEN_REDIRECT(inode)) {
 			if (!susfs_open_redirect_spoof_show_map_vma(inode, &ino, &dev, spoofed_redirected_name)) {
@@ -488,17 +489,16 @@ static void show_map_vma(struct seq_file *m, struct vm_area_struct *vma, int is_
 #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
 		susfs_sus_kstat_spoof_show_map_vma(inode, &dev, &ino);
 #endif // #ifdef CONFIG_KSU_SUSFS_SUS_KSTAT
-        struct dentry *dentry = file->f_path.dentry;
-        if (dentry) {
-        	const char *path = (const char *)dentry->d_name.name; 
-            	if (strstr(path, "lineage")) { 
-	  	start = vma->vm_start;
-	  	end = vma->vm_end;
-	  	show_vma_header_prefix(m, start, end, flags, pgoff, dev, ino);
-            	name = "/dev/ashmem (deleted)";
-	  	goto done;
-            	 	}
-            	}
+		if (dentry) {
+			const char *path = (const char *)dentry->d_name.name;
+			if (strstr(path, "lineage")) {
+				start = vma->vm_start;
+				end = vma->vm_end;
+				show_vma_header_prefix(m, start, end, flags, pgoff, dev, ino);
+				name = "/dev/ashmem (deleted)";
+				goto done;
+			}
+		}
 	}
 
 #ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
