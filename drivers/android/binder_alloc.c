@@ -1261,7 +1261,6 @@ void binder_alloc_copy_from_buffer(struct binder_alloc *alloc,
 				    dest, bytes);
 }
 
-<<<<<<< HEAD
 void binder_alloc_shrinker_exit(void)
 {
 	unregister_shrinker(&binder_shrinker);
