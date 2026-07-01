@@ -60,10 +60,16 @@ jobs:
       - name: Set up Toolchain
         run: |
           mkdir -p .deps/clang
-          for i in 1 2 3; do
-            wget -qO- "$CLANG_URL" | tar xz -C .deps/clang && break
-            echo "Retry $i/3 ..." && sleep 5
-          done || { echo "Failed to download toolchain"; exit 1; }
+          echo "Downloading clang toolchain (${CLANG_VERSION})..."
+          curl -fL --retry 3 --retry-delay 15 --connect-timeout 30 \
+            --max-time 3600 --progress-bar \
+            -o /tmp/clang-toolchain.tar.gz "$CLANG_URL"
+          echo "Verifying archive integrity..."
+          tar tzf /tmp/clang-toolchain.tar.gz | head -3
+          echo "Extracting toolchain..."
+          tar xzf /tmp/clang-toolchain.tar.gz -C .deps/clang
+          rm -f /tmp/clang-toolchain.tar.gz
+          echo "Toolchain ready at .deps/clang ($(ls .deps/clang/bin/clang | wc -l))"
 
       - name: Set up AnyKernel3
         run: |
