@@ -114,7 +114,7 @@ jobs:
 
           # 4. Compile Kernel using absolute tool paths
           make -j$(nproc --all) O=out ARCH=arm64 \
-            CC="ccache $TC_PATH/clang" \
+            CC="$TC_PATH/clang" \
             CLANG_TRIPLE="aarch64-linux-gnu-" \
             LD="$TC_PATH/ld.lld" \
             AR="$TC_PATH/llvm-ar" \
