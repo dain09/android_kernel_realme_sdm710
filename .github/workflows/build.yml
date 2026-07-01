@@ -19,11 +19,10 @@ env:
   KERNEL_IMAGE: "Image.gz-dtb"
   KERNEL_NAME: "Khaenriah"
   KERNEL_VERSION: "SLMK-EOL"
-  KERNEL_VARIANT: "XXKSU"
+  KERNEL_VARIANT: "ReSukiSU"
   PROTON_CLANG_REPO: "https://github.com/kdrag0n/proton-clang.git"
   ANYKERNEL_REPO: "https://github.com/dain09/AnyKernel3.git"
-  KERNELSU_SETUP: "https://raw.githubusercontent.com/Sorayukii/KernelSU-Next/stable/kernel/setup.sh"
-  KERNELSU_SETUP_BRANCH: hookless-staging
+  KERNELSU_SETUP: "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh"
   KBUILD_BUILD_USER: "@d_ai_n"
   KBUILD_BUILD_HOST: "ubuntu-24.04"
 
@@ -66,7 +65,7 @@ jobs:
 
       - name: Integrate KernelSU
         run: |
-          curl -LSs "$KERNELSU_SETUP" | bash -s $KERNELSU_SETUP_BRANCH
+          curl -LSs "$KERNELSU_SETUP" | bash
 
       - name: Configure and Build Kernel
         run: |
@@ -87,8 +86,8 @@ jobs:
           # 2. Inject KernelSU configs and Localversion via scripts/config
           ./scripts/config --file out/.config \
             -e CONFIG_KSU \
-            -e CONFIG_KSU_EXTRAS \
-            -e CONFIG_KSU_TAMPER_SYSCALL_TABLE \
+            -e CONFIG_KSU_MANUAL_HOOK \
+            -e CONFIG_KSU_SUSFS \
             --set-str CONFIG_LOCALVERSION "-${KERNEL_NAME}-${KERNEL_VERSION}"
             
           # 3. Synchronize oldconfig
