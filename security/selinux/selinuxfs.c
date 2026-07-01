@@ -60,7 +60,8 @@ static int __init checkreqprot_setup(char *str)
 }
 __setup("checkreqprot=", checkreqprot_setup);
 
-static DEFINE_MUTEX(sel_mutex);
+DEFINE_MUTEX(sel_mutex);
+EXPORT_SYMBOL_GPL(sel_mutex);
 
 /* global data for booleans */
 static struct dentry *bool_dir;
