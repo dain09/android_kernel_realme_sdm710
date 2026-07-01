@@ -77,7 +77,9 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
   echo \#define LINUX_COMPILE_HOST \"`echo $LINUX_COMPILE_HOST | $UTS_TRUNCATE`\"
 
   if [ -z "$KBUILD_COMPILER_STRING" ]; then
-    echo \#define LINUX_COMPILER \"`$CC -v 2>&1 | grep ' version ' | sed 's/[[:space:]]*$//'`\"
+    CC_VERSION=$($CC -v 2>&1 | grep ' version ' | sed 's/[[:space:]]*$//')
+    LD_VERSION=$($LD -v 2>/dev/null | head -n1 | sed 's/(compatible with [^)]*)//' | sed 's/[[:space:]]*$//')
+    printf '#define LINUX_COMPILER "%s %s, %s"\n' "$KBUILD_BUILD_FEATURES" "$CC_VERSION" "$LD_VERSION"
   else
     echo \#define LINUX_COMPILER \"$KBUILD_COMPILER_STRING\"
   fi;

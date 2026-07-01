@@ -20,11 +20,13 @@ env:
   KERNEL_NAME: "Khaenriah"
   KERNEL_VERSION: "SLMK-EOL"
   KERNEL_VARIANT: "ReSukiSU"
-  PROTON_CLANG_REPO: "https://github.com/kdrag0n/proton-clang.git"
+  CLANG_VERSION: "clang-r596125"
+  CLANG_URL: "https://android.googlesource.com/platform/prebuilts/clang/host/linux-x86/+archive/refs/heads/mirror-goog-main-llvm-toolchain-source/${CLANG_VERSION}.tar.gz"
   ANYKERNEL_REPO: "https://github.com/dain09/AnyKernel3.git"
   KERNELSU_SETUP: "https://raw.githubusercontent.com/ReSukiSU/ReSukiSU/main/kernel/setup.sh"
   KBUILD_BUILD_USER: "@d_ai_n"
   KBUILD_BUILD_HOST: "ubuntu-24.04"
+  KBUILD_BUILD_FEATURES: "source: https://github.com/dain09/android_kernel_realme_sdm710 //"
 
 jobs:
   build:
@@ -57,7 +59,8 @@ jobs:
 
       - name: Set up Toolchain
         run: |
-          git clone --depth 1 $PROTON_CLANG_REPO .deps/proton-clang
+          mkdir -p .deps/clang
+          wget -qO- "$CLANG_URL" | tar xz -C .deps/clang
 
       - name: Set up AnyKernel3
         run: |
@@ -71,8 +74,8 @@ jobs:
         run: |
           mkdir -p out
           
-          # Define absolute path to Proton Clang tools
-          TC_PATH="${{ github.workspace }}/.deps/proton-clang/bin"
+          # Define absolute path to Clang tools
+          TC_PATH="${{ github.workspace }}/.deps/clang/bin"
 
           # Mute the unused argument warning for host tools for a clean log
           export HOSTCFLAGS="-Wno-unused-command-line-argument"
@@ -80,6 +83,7 @@ jobs:
           # 1. Generate target defconfig using absolute compiler path
           make O=out ARCH=arm64 \
             CC="$TC_PATH/clang" \
+            CLANG_TRIPLE="aarch64-linux-gnu-" \
             CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
             $KERNEL_DEFCONFIG
           
@@ -93,13 +97,16 @@ jobs:
           # 3. Synchronize oldconfig
           make O=out ARCH=arm64 \
             CC="$TC_PATH/clang" \
+            CLANG_TRIPLE="aarch64-linux-gnu-" \
             CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
             CROSS_COMPILE_ARM32="$TC_PATH/arm-linux-gnueabi-" \
+            CROSS_COMPILE_COMPAT="$TC_PATH/arm-linux-gnueabi-" \
             olddefconfig
 
           # 4. Compile Kernel using absolute tool paths
           make -j$(nproc --all) O=out ARCH=arm64 \
             CC="ccache $TC_PATH/clang" \
+            CLANG_TRIPLE="aarch64-linux-gnu-" \
             LD="$TC_PATH/ld.lld" \
             AR="$TC_PATH/llvm-ar" \
             NM="$TC_PATH/llvm-nm" \
@@ -109,7 +116,9 @@ jobs:
             STRIP="$TC_PATH/llvm-strip" \
             CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
             CROSS_COMPILE_ARM32="$TC_PATH/arm-linux-gnueabi-" \
-            LLVM=1 LLVM_IAS=1
+            CROSS_COMPILE_COMPAT="$TC_PATH/arm-linux-gnueabi-" \
+            LLVM=1 LLVM_IAS=1 \
+            INSTALL_MOD_STRIP=1
 
       - name: Package AnyKernel3
         id: package
