@@ -257,12 +257,13 @@ static int sel_mmap_handle_status(struct file *filp,
 			       size, vma->vm_page_prot);
 }
 
-static const struct file_operations sel_handle_status_ops = {
+const struct file_operations sel_handle_status_ops = {
 	.open		= sel_open_handle_status,
 	.read		= sel_read_handle_status,
 	.mmap		= sel_mmap_handle_status,
 	.llseek		= generic_file_llseek,
 };
+EXPORT_SYMBOL_GPL(sel_handle_status_ops);
 
 #ifdef CONFIG_SECURITY_SELINUX_DISABLE
 static ssize_t sel_write_disable(struct file *file, const char __user *buf,
