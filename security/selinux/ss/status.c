@@ -35,8 +35,10 @@
  * In most cases, application shall confirm the kernel status is not
  * changed without any system call invocations.
  */
-static struct page *selinux_status_page;
-static DEFINE_MUTEX(selinux_status_lock);
+struct page *selinux_status_page;
+EXPORT_SYMBOL_GPL(selinux_status_page);
+DEFINE_MUTEX(selinux_status_lock);
+EXPORT_SYMBOL_GPL(selinux_status_lock);
 
 /*
  * selinux_kernel_status_page
