@@ -386,8 +386,6 @@ static void msm_restart_prepare(const char *cmd)
 	}
 
 #ifndef VENDOR_EDIT
-/* OPLUS 2013.07.09 hewei modify begin for restart mode*/
-#endif
 	if (cmd != NULL) {
 		if (!strncmp(cmd, "bootloader", 10)) {
 			qpnp_pon_set_restart_reason(
