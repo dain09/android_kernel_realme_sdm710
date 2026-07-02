@@ -107,7 +107,7 @@ static void inotify_fdinfo(struct seq_file *m, struct fsnotify_mark *mark)
 #ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
 		mnt = real_mount(file->f_path.mnt);
 		if (mnt->mnt_id >= DEFAULT_KSU_MNT_ID &&
-			likely(susfs_is_current_proc_umounted()))
+			unlikely(susfs_is_current_proc_umounted()))
 		{
 			struct path path;
 			char *pathname = kmalloc(PAGE_SIZE, GFP_KERNEL);

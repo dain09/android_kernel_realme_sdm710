@@ -1482,12 +1482,23 @@ static void susfs_run_extra_works(struct work_struct *work) {
 	#endif // #ifdef CONFIG_KSU_SUSFS_SUS_PATH
 }
 
+static bool susfs_initialized;
+
 /* susfs_init */
-void susfs_init(void) {\
+void susfs_init(void) {
+	if (unlikely(susfs_initialized))
+		return;
+	susfs_initialized = true;
 	SUSFS_LOGI("Initializing susfs_extra_works\n");
 	INIT_WORK(&susfs_extra_works, susfs_run_extra_works);
 	SUSFS_LOGI("susfs is initialized! version: " SUSFS_VERSION " \n");
 }
+
+static int __init susfs_initcall(void) {
+	susfs_init();
+	return 0;
+}
+fs_initcall(susfs_initcall);
 
 /* No module exit is needed becuase it should never be a loadable kernel module */
 //void __init susfs_exit(void)

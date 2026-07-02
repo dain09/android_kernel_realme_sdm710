@@ -377,7 +377,7 @@ static int input_get_disposition(struct input_dev *dev,
 	return disposition;
 }
 
-#ifdef CONFIG_KSU
+#ifdef CONFIG_KSU_SUSFS
 extern struct static_key_true ksu_is_input_hook_enabled;
 extern int ksu_handle_input_handle_event(unsigned int *type, unsigned int *code, int *value);
 #endif

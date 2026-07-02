@@ -139,7 +139,7 @@ int data_type, susfs_fname_t file_name, u32 cookie)
 #endif
 
 static inline bool susfs_is_current_proc_umounted(void) {
-	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)));
+	return (unlikely(test_thread_flag(TIF_PROC_UMOUNTED)));
 }
 
 static inline void susfs_set_current_proc_umounted(void) {
@@ -147,7 +147,7 @@ static inline void susfs_set_current_proc_umounted(void) {
 }
 
 static inline bool susfs_is_current_proc_umounted_app(void) {
-	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)) &&
+	return (unlikely(test_thread_flag(TIF_PROC_UMOUNTED)) &&
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
 			__kuid_val(current_uid()) >= 10000);
 #else

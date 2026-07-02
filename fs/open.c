@@ -380,7 +380,7 @@ SYSCALL_DEFINE3(faccessat, int, dfd, const char __user *, filename, int, mode)
 	unsigned int lookup_flags = LOOKUP_FOLLOW;
 
 #ifdef CONFIG_KSU_SUSFS
-	if (likely(susfs_is_current_proc_umounted()))
+	if (unlikely(susfs_is_current_proc_umounted()))
 		goto orig_flow;
 	if (static_branch_likely(&ksu_su_compat_enabled))
 		if (unlikely(__ksu_is_allow_uid_for_current(current_uid().val))) {
