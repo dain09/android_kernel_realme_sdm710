@@ -151,7 +151,7 @@ static inline bool susfs_is_current_proc_umounted_app(void) {
 #if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
 			__kuid_val(current_uid()) >= 10000);
 #else
-			current_uid().val >= 10000);
+			current_uid() >= 10000);
 #endif
 }
 
