@@ -7,9 +7,6 @@
 #include <linux/string.h>
 #include <linux/mm.h>
 #include <linux/file.h>
-#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
-#include <linux/susfs_def.h>
-#endif
 #include <linux/fdtable.h>
 #include <linux/fsnotify.h>
 #include <linux/module.h>
@@ -36,6 +33,9 @@
 #include <linux/compat.h>
 
 #include "internal.h"
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+#include <linux/susfs_def.h>
+#endif
 
 int do_truncate2(struct vfsmount *mnt, struct dentry *dentry, loff_t length,
 		unsigned int time_attrs, struct file *filp)
