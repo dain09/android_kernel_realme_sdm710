@@ -7,6 +7,9 @@
 #include <linux/string.h>
 #include <linux/mm.h>
 #include <linux/file.h>
+#ifdef CONFIG_KSU_SUSFS_OPEN_REDIRECT
+#include <linux/susfs_def.h>
+#endif
 #include <linux/fdtable.h>
 #include <linux/fsnotify.h>
 #include <linux/module.h>

@@ -1483,6 +1483,21 @@ static void susfs_run_extra_works(struct work_struct *work) {
 }
 
 /* susfs_init */
+/* try_umount - delegates to KSU kernel umount */
+#ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
+extern int ksu_handle_umount(uid_t old_uid, uid_t new_uid);
+
+void susfs_try_umount(uid_t new_uid)
+{
+	ksu_handle_umount(current_uid().val, new_uid);
+}
+
+void susfs_add_try_umount(void __user **arg)
+{
+	pr_info("susfs: add_try_umount is deprecated, use KSU_IOCTL_ADD_TRY_UMOUNT instead\n");
+}
+#endif
+
 void susfs_init(void) {\
 	SUSFS_LOGI("Initializing susfs_extra_works\n");
 	INIT_WORK(&susfs_extra_works, susfs_run_extra_works);
