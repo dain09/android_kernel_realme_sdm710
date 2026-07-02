@@ -3,10 +3,8 @@
 
 #include <linux/bits.h>
 #include <linux/string.h>
-#include <linux/version.h> // We need check kernel version.
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
+#include <linux/version.h>
 #include <linux/cred.h>
-#endif
 
 /********/
 /* ENUM */
@@ -148,11 +146,7 @@ static inline void susfs_set_current_proc_umounted(void) {
 
 static inline bool susfs_is_current_proc_umounted_app(void) {
 	return (likely(test_thread_flag(TIF_PROC_UMOUNTED)) &&
-#if LINUX_VERSION_CODE >= KERNEL_VERSION(4, 12, 0)
-			__kuid_val(current_uid()) >= 10000);
-#else
-			current_uid() >= 10000);
-#endif
+			from_kuid(&init_user_ns, current_uid()) >= 10000);
 }
 
 #define SUSFS_IS_INODE_SUS_MAP(inode) \
