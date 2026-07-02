@@ -1483,13 +1483,11 @@ static void susfs_run_extra_works(struct work_struct *work) {
 }
 
 /* susfs_init */
-/* try_umount - delegates to KSU kernel umount */
+/* try_umount - stubs for KSU compatibility */
 #ifdef CONFIG_KSU_SUSFS_TRY_UMOUNT
-extern int ksu_handle_umount(uid_t old_uid, uid_t new_uid);
-
 void susfs_try_umount(uid_t new_uid)
 {
-	ksu_handle_umount(current_uid().val, new_uid);
+	/* KSU handles umount internally */
 }
 
 void susfs_add_try_umount(void __user **arg)
