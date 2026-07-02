@@ -1484,6 +1484,56 @@ static void susfs_run_extra_works(struct work_struct *work) {
 
 static bool susfs_initialized;
 
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+static void susfs_add_sus_path_loop_kernel(const char *path)
+{
+	struct st_susfs_sus_path_list *new_list;
+
+	if (!path || *path == '\0')
+		return;
+
+	new_list = kzalloc(sizeof(struct st_susfs_sus_path_list), GFP_KERNEL);
+	if (!new_list)
+		return;
+
+	strscpy(new_list->info.target_pathname, path, SUSFS_MAX_LEN_PATHNAME - 1);
+	strscpy(new_list->target_pathname, path, SUSFS_MAX_LEN_PATHNAME - 1);
+	INIT_LIST_HEAD(&new_list->list);
+	mutex_lock(&susfs_mutex_lock_sus_path);
+	list_add_tail_rcu(&new_list->list, &LH_SUS_PATH_LOOP);
+	mutex_unlock(&susfs_mutex_lock_sus_path);
+	SUSFS_LOGI("kernel added path to sus_path_loop: '%s'\n", path);
+}
+
+/* Common paths that root detection apps check — added via loop so they take
+ * effect as soon as each path becomes available (e.g. after /data decryption).
+ */
+static void susfs_add_common_hide_paths(void)
+{
+	/* KernelSU / APatch / Magisk paths */
+	susfs_add_sus_path_loop_kernel("/data/adb/ksu");
+	susfs_add_sus_path_loop_kernel("/data/adb/modules");
+	susfs_add_sus_path_loop_kernel("/data/adb/modules_update");
+	susfs_add_sus_path_loop_kernel("/data/adb/apatch");
+	susfs_add_sus_path_loop_kernel("/data/adb/ap/");
+	susfs_add_sus_path_loop_kernel("/data/adb/service.sh");
+	susfs_add_sus_path_loop_kernel("/data/adb/ksud");
+	susfs_add_sus_path_loop_kernel("/data/adb/ksu_susfs");
+	susfs_add_sus_path_loop_kernel("/data/adb/busybox");
+
+	/* Common custom ROM / root paths */
+	susfs_add_sus_path_loop_kernel("/su");
+	susfs_add_sus_path_loop_kernel("/sbin/su");
+	susfs_add_sus_path_loop_kernel("/system/xbin/su");
+	susfs_add_sus_path_loop_kernel("/system/bin/su");
+
+	/* Magisk paths */
+	susfs_add_sus_path_loop_kernel("/sbin/magisk");
+	susfs_add_sus_path_loop_kernel("/data/adb/magisk");
+	susfs_add_sus_path_loop_kernel("/data/adb/magisk.db");
+}
+#endif /* CONFIG_KSU_SUSFS_SUS_PATH */
+
 /* susfs_init */
 void susfs_init(void) {
 	if (unlikely(susfs_initialized))
@@ -1491,6 +1541,19 @@ void susfs_init(void) {
 	susfs_initialized = true;
 	SUSFS_LOGI("Initializing susfs_extra_works\n");
 	INIT_WORK(&susfs_extra_works, susfs_run_extra_works);
+
+	/* Enable AVC log spoofing by default (hides u:r:su:s0 in audit logs) */
+	static_branch_enable(&susfs_is_avc_log_spoofing_enabled);
+
+#ifdef CONFIG_KSU_SUSFS_SUS_PATH
+	susfs_add_common_hide_paths();
+#endif
+
+#ifdef CONFIG_KSU_SUSFS_SUS_MOUNT
+	/* Enable hiding sus mounts from non-root processes by default */
+	WRITE_ONCE(susfs_hide_sus_mnts_for_non_su_procs, true);
+#endif
+
 	SUSFS_LOGI("susfs is initialized! version: " SUSFS_VERSION " \n");
 }
 
