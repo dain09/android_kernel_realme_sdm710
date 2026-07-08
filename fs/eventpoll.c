@@ -2125,8 +2125,7 @@ SYSCALL_DEFINE6(epoll_pwait, int, epfd, struct epoll_event __user *, events,
 			      sigmask, sigsetsize);
 }
 
-// https://elixir.bootlin.com/linux/v4.13/source/kernel/time/time.c#L894
-static int get_timespec64(struct timespec64 *ts,
+static int ep_get_timespec64(struct timespec64 *ts,
 		   const struct __kernel_timespec __user *uts)
 {
 	struct __kernel_timespec kts;
@@ -2155,7 +2154,7 @@ SYSCALL_DEFINE6(epoll_pwait2, int, epfd, struct epoll_event __user *, events,
 	struct timespec64 ts, *to = NULL;
 
 	if (timeout) {
-		if (get_timespec64(&ts, timeout))
+		if (ep_get_timespec64(&ts, timeout))
 			return -EFAULT;
 		to = &ts;
 		if (poll_select_set_timeout(to, ts.tv_sec, ts.tv_nsec))
@@ -2233,7 +2232,7 @@ COMPAT_SYSCALL_DEFINE6(epoll_pwait2, int, epfd,
 	struct timespec64 ts, *to = NULL;
 
 	if (timeout) {
-		if (get_timespec64(&ts, timeout))
+		if (ep_get_timespec64(&ts, timeout))
 			return -EFAULT;
 		to = &ts;
 		if (poll_select_set_timeout(to, ts.tv_sec, ts.tv_nsec))
