@@ -457,20 +457,6 @@
 				compatible = "android,vbmeta";
 				parts = "vbmeta,boot,dtbo";
 			};
-
-			//fstab {
-			//	compatible = "android,fstab";
-			//	vendor {
-			//		compatible = "android,vendor";
-			//		dev = "/dev/block/platform/soc/1d84000.ufshc/by-name/vendor";
-			//		type = "ext4";
-			//		mnt_flags = "ro,barrier=1,discard";
-			//		// #ifdef VENDOR_EDIT
-			//		fsmgr_flags = "wait,avb";
-			//		// #endif
-			//		status = "ok";
-			//	};
-			//};
 		};
 	};
 
