@@ -14,7 +14,6 @@ obj-$(CONFIG_NET)		+= $(tmp-y)
 obj-$(CONFIG_LLC)		+= llc/
 obj-$(CONFIG_NET)		+= ethernet/ 802/ sched/ netlink/ bpf/
 obj-$(CONFIG_NETFILTER)		+= netfilter/
-obj-$(CONFIG_WIREGUARD) 	+= wireguard/
 obj-$(CONFIG_INET)		+= ipv4/
 obj-$(CONFIG_XFRM)		+= xfrm/
 obj-$(CONFIG_UNIX_SCM)		+= unix/
@@ -58,7 +57,8 @@ obj-$(CONFIG_CAIF)		+= caif/
 ifneq ($(CONFIG_DCB),)
 obj-y				+= dcb/
 endif
-obj-$(CONFIG_6LOWPAN)		+= 6lowpan/
+obj-$(CONFIG_WIREGUARD)	+= wireguard/
+obj-$(CONFIG_6LOWPAN)	+= 6lowpan/
 obj-$(CONFIG_IEEE802154)	+= ieee802154/
 obj-$(CONFIG_MAC802154)		+= mac802154/
 
