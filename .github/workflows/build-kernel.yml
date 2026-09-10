@@ -21,6 +21,8 @@ env:
   TOOLCHAIN_REPO: https://github.com/kdrag0n/proton-clang.git
   ANYKERNEL_REPO: https://github.com/dain09/AnyKernel3.git
   ANYKERNEL_BRANCH: r5p
+  KERNELSU_SETUP: https://raw.githubusercontent.com/backslashxx/KernelSU/master/kernel/setup.sh
+  KERNELSU_REF: master
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -47,7 +49,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y \
             bc bison build-essential ccache cpio flex git libelf-dev lld \
-            libncurses5-dev libssl-dev make python3 rsync unzip zip
+            libncurses5-dev libssl-dev make python3 rsync unzip zip curl
 
       - name: Set up toolchain
         run: |
@@ -57,6 +59,15 @@ jobs:
       - name: Set up AnyKernel3
         run: |
           git clone --depth 1 -b "$ANYKERNEL_BRANCH" "$ANYKERNEL_REPO" .deps/AnyKernel3
+
+      - name: Integrate KernelSU
+        run: |
+          set -euo pipefail
+          # Replace the vendored KSU snapshot with the requested upstream tree.
+          rm -rf drivers/kernelsu KernelSU
+          curl -fsSL "$KERNELSU_SETUP" | bash -s "$KERNELSU_REF"
+          test -L drivers/kernelsu
+          test -f KernelSU/kernel/Kconfig
 
       - name: Configure kernel
         env:
