@@ -6,11 +6,8 @@ on:
       publish_release:
         description: Publish a GitHub release after a successful build
         required: true
-        default: false
+        default: true
         type: boolean
-  push:
-    branches:
-      - '**'
 
 permissions:
   contents: read
