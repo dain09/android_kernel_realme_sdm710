@@ -82,13 +82,18 @@ jobs:
           export HOSTCFLAGS="-Wno-unused-command-line-argument"
 
           make O=out ARCH="$ARCH" \
+            HOSTCC=/usr/bin/gcc \
+            HOSTLD=/usr/bin/ld \
             CC="$TC_PATH/clang" \
             CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
             "$DEFCONFIG"
 
           ./scripts/config --file out/.config --set-str CONFIG_LOCALVERSION "$LOCALVERSION"
           ./scripts/config --file out/.config --disable CONFIG_LOCALVERSION_AUTO
-          make O=out ARCH="$ARCH" olddefconfig
+          make O=out ARCH="$ARCH" \
+            HOSTCC=/usr/bin/gcc \
+            HOSTLD=/usr/bin/ld \
+            olddefconfig
           cp out/.config artifacts/kernel.config
 
       - name: Build kernel
@@ -96,6 +101,8 @@ jobs:
           set -euo pipefail
           TC_PATH="$GITHUB_WORKSPACE/.deps/proton-clang/bin"
           make -j"$(nproc)" O=out ARCH="$ARCH" \
+            HOSTCC=/usr/bin/gcc \
+            HOSTLD=/usr/bin/ld \
             CC="ccache $TC_PATH/clang" \
             LD="$TC_PATH/ld.lld" \
             AR="$TC_PATH/llvm-ar" \
