@@ -78,7 +78,9 @@ jobs:
           printf 'Building branch: %s\nLocal version: %s\n' "$BRANCH_NAME" "$LOCALVERSION"
 
           TC_PATH="$GITHUB_WORKSPACE/.deps/proton-clang/bin"
-          export PATH="$TC_PATH:$PATH"
+          # The 4.9 host build forces -fuse-ld=lld. Keep Ubuntu's lld ahead
+          # of Proton's legacy ld, which cannot parse Ubuntu 24.04 glibc.
+          export PATH="/usr/bin:/bin:$TC_PATH:$PATH"
           export HOSTCFLAGS="-Wno-unused-command-line-argument"
 
           make O=out ARCH="$ARCH" \
