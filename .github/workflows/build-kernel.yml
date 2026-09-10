@@ -1,0 +1,156 @@
+name: Build SDM670 Kernel
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish_release:
+        description: Publish a GitHub release after a successful build
+        required: true
+        default: false
+        type: boolean
+  push:
+    branches:
+      - '**'
+
+permissions:
+  contents: read
+
+env:
+  ARCH: arm64
+  DEFCONFIG: sdm670-perf_defconfig
+  KERNEL_IMAGE: Image.gz-dtb
+  KERNEL_NAME: Khaenriah
+  DEVICE_CODENAME: RMX1971
+  TOOLCHAIN_REPO: https://github.com/kdrag0n/proton-clang.git
+  ANYKERNEL_REPO: https://github.com/dain09/AnyKernel3.git
+  ANYKERNEL_BRANCH: r5p
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build ${{ github.ref_name }}
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Restore ccache
+        uses: hendrikmuhs/ccache-action@v1.2.17
+        with:
+          key: sdm670-${{ runner.os }}-${{ github.ref_name }}
+          max-size: 10G
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            bc bison build-essential ccache cpio flex git libelf-dev lld \
+            libncurses5-dev libssl-dev make python3 rsync unzip zip
+
+      - name: Set up toolchain
+        run: |
+          mkdir -p .deps
+          git clone --depth 1 "$TOOLCHAIN_REPO" .deps/proton-clang
+
+      - name: Set up AnyKernel3
+        run: |
+          git clone --depth 1 -b "$ANYKERNEL_BRANCH" "$ANYKERNEL_REPO" .deps/AnyKernel3
+
+      - name: Configure kernel
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          mkdir -p out artifacts
+
+          # Keep the branch in the Android kernel release string.
+          BRANCH_TAG=$(printf '%s' "$BRANCH_NAME" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed 's#[^a-z0-9._-]#-#g; s#--*#-#g; s#^-##; s#-$##' \
+            | cut -c1-48)
+          BRANCH_TAG=${BRANCH_TAG:-detached}
+          LOCALVERSION="-${KERNEL_NAME}-${BRANCH_TAG}"
+          printf 'Building branch: %s\nLocal version: %s\n' "$BRANCH_NAME" "$LOCALVERSION"
+
+          TC_PATH="$GITHUB_WORKSPACE/.deps/proton-clang/bin"
+          export PATH="$TC_PATH:$PATH"
+          export HOSTCFLAGS="-Wno-unused-command-line-argument"
+
+          make O=out ARCH="$ARCH" \
+            CC="$TC_PATH/clang" \
+            CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
+            "$DEFCONFIG"
+
+          ./scripts/config --file out/.config --set-str CONFIG_LOCALVERSION "$LOCALVERSION"
+          ./scripts/config --file out/.config --disable CONFIG_LOCALVERSION_AUTO
+          make O=out ARCH="$ARCH" olddefconfig
+          cp out/.config artifacts/kernel.config
+
+      - name: Build kernel
+        run: |
+          set -euo pipefail
+          TC_PATH="$GITHUB_WORKSPACE/.deps/proton-clang/bin"
+          make -j"$(nproc)" O=out ARCH="$ARCH" \
+            CC="ccache $TC_PATH/clang" \
+            LD="$TC_PATH/ld.lld" \
+            AR="$TC_PATH/llvm-ar" \
+            NM="$TC_PATH/llvm-nm" \
+            OBJCOPY="$TC_PATH/llvm-objcopy" \
+            OBJDUMP="$TC_PATH/llvm-objdump" \
+            READELF="$TC_PATH/llvm-readelf" \
+            STRIP="$TC_PATH/llvm-strip" \
+            CROSS_COMPILE="$TC_PATH/aarch64-linux-gnu-" \
+            CROSS_COMPILE_ARM32="$TC_PATH/arm-linux-gnueabi-" \
+            LLVM=1 LLVM_IAS=1
+
+      - name: Package AnyKernel3
+        env:
+          BRANCH_NAME: ${{ github.ref_name }}
+        run: |
+          set -euo pipefail
+          TC_PATH="$GITHUB_WORKSPACE/.deps/proton-clang/bin"
+          BRANCH_TAG=$(printf '%s' "$BRANCH_NAME" \
+            | tr '[:upper:]' '[:lower:]' \
+            | sed 's#[^a-z0-9._-]#-#g; s#--*#-#g; s#^-##; s#-$##' \
+            | cut -c1-48)
+          BRANCH_TAG=${BRANCH_TAG:-detached}
+          BUILD_DATE=$(date -u +%Y%m%d-%H%M)
+          ZIP_NAME="${KERNEL_NAME}-${BRANCH_TAG}-${DEVICE_CODENAME}-${BUILD_DATE}.zip"
+
+          cp out/arch/arm64/boot/$KERNEL_IMAGE artifacts/
+          cp out/arch/arm64/boot/$KERNEL_IMAGE .deps/AnyKernel3/
+          (cd .deps/AnyKernel3 && zip -r9 "$GITHUB_WORKSPACE/artifacts/$ZIP_NAME" . -x '.git*' 'README.md')
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-${{ github.ref_name }}
+          path: artifacts/*
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.publish_release }}
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: kernel-${{ github.ref_name }}
+          path: artifacts
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: Khaenriah-${{ github.ref_name }}-${{ github.run_number }}
+          name: Khaenriah ${{ github.ref_name }} #${{ github.run_number }}
+          generate_release_notes: true
+          files: artifacts/*
